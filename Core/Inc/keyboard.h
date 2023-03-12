@@ -6,6 +6,6 @@
 
 void RestoreState(void);
 
-void GetClick(uint16_t GPIO_Pin, char button);
+void scan(state which);
 
 #endif /*KEYBOARD_H*/
