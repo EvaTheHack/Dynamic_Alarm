@@ -2,85 +2,13 @@
 #include "lcd1602.h"
 #include "rtc.h"
 #include "menu.h"
-// #include "keyboard.h"
+#include "keyboard.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 
-typedef enum
-{
-    FIRST,
-    SECOND,
-    THIRD,
-    FOURTH
-} state;
-
-#define r1_port GPIOC
-#define r1_pin GPIO_PIN_7
-
-#define r2_port GPIOA
-#define r2_pin GPIO_PIN_9
-
-#define r3_port GPIOA
-#define r3_pin GPIO_PIN_8
-
-#define r4_port GPIOB
-#define r4_pin GPIO_PIN_10
-
-#define c1_port GPIOB
-#define c1_pin GPIO_PIN_4
-
-#define c2_port GPIOB
-#define c2_pin GPIO_PIN_5
-
-#define c3_port GPIOB
-#define c3_pin GPIO_PIN_3
-
-#define c4_port GPIOA
-#define c4_pin GPIO_PIN_10
-
 char button = 'X';
 char message[6];
-char datetime_str[14];
-
-void RestoreState(void)
-{
-    HAL_GPIO_WritePin(r1_port, r1_pin, 1);
-    HAL_GPIO_WritePin(r2_port, r2_pin, 1);
-    HAL_GPIO_WritePin(r3_port, r3_pin, 1);
-    HAL_GPIO_WritePin(r4_port, r4_pin, 1);
-}
-
-void scan(state which)
-{
-    switch (which)
-    {
-    case FIRST:
-        HAL_GPIO_WritePin(r1_port, r1_pin, 1);
-        HAL_GPIO_WritePin(r2_port, r2_pin, 0);
-        HAL_GPIO_WritePin(r3_port, r3_pin, 0);
-        HAL_GPIO_WritePin(r4_port, r4_pin, 0);
-        break;
-    case SECOND:
-        HAL_GPIO_WritePin(r1_port, r1_pin, 0);
-        HAL_GPIO_WritePin(r2_port, r2_pin, 1);
-        HAL_GPIO_WritePin(r3_port, r3_pin, 0);
-        HAL_GPIO_WritePin(r4_port, r4_pin, 0);
-        break;
-    case THIRD:
-        HAL_GPIO_WritePin(r1_port, r1_pin, 0);
-        HAL_GPIO_WritePin(r2_port, r2_pin, 0);
-        HAL_GPIO_WritePin(r3_port, r3_pin, 1);
-        HAL_GPIO_WritePin(r4_port, r4_pin, 0);
-        break;
-    case FOURTH:
-        HAL_GPIO_WritePin(r1_port, r1_pin, 0);
-        HAL_GPIO_WritePin(r2_port, r2_pin, 0);
-        HAL_GPIO_WritePin(r3_port, r3_pin, 0);
-        HAL_GPIO_WritePin(r4_port, r4_pin, 1);
-        break;
-    }
-}
 
 RTC_HandleTypeDef hrtc;
 UART_HandleTypeDef huart2;
@@ -93,107 +21,21 @@ static void MX_GPIO_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART2_UART_Init(void);
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void HAL_GPIO_EXTI_Callback(uint16_t pin)
 {
-    if (GPIO_Pin == c1_pin)
-    {
-        scan(FIRST);
-        if (HAL_GPIO_ReadPin(c1_port, c1_pin))
-        {
-            button = '1';
-        }
-        RestoreState();
-
-        scan(SECOND);
-        if (HAL_GPIO_ReadPin(c1_port, c1_pin))
-        {
-            button = '4';
-        }
-        RestoreState();
-
-        scan(THIRD);
-        if (HAL_GPIO_ReadPin(c1_port, c1_pin))
-        {
-            button = '7';
-        }
-        RestoreState();
-
-        scan(FOURTH);
-        if (HAL_GPIO_ReadPin(c1_port, c1_pin))
-            button = '*';
-        RestoreState();
-    }
-    else if (GPIO_Pin == c2_pin)
-    {
-        scan(FIRST);
-        if (HAL_GPIO_ReadPin(c2_port, c2_pin))
-            button = '2';
-        RestoreState();
-
-        scan(SECOND);
-        if (HAL_GPIO_ReadPin(c2_port, c2_pin))
-            button = '5';
-        RestoreState();
-
-        scan(THIRD);
-        if (HAL_GPIO_ReadPin(c2_port, c2_pin))
-            button = '8';
-        RestoreState();
-
-        scan(FOURTH);
-        if (HAL_GPIO_ReadPin(c2_port, c2_pin))
-            button = '0';
-        RestoreState();
-    }
-    else if (GPIO_Pin == c3_pin)
-    {
-        scan(FIRST);
-        if (HAL_GPIO_ReadPin(c3_port, c3_pin))
-            button = '3';
-        RestoreState();
-
-        scan(SECOND);
-        if (HAL_GPIO_ReadPin(c3_port, c3_pin))
-            button = '6';
-        RestoreState();
-
-        scan(THIRD);
-        if (HAL_GPIO_ReadPin(c3_port, c3_pin))
-            button = '9';
-        RestoreState();
-
-        scan(FOURTH);
-        if (HAL_GPIO_ReadPin(c3_port, c3_pin))
-            button = '#';
-        RestoreState();
-    }
-    else if (GPIO_Pin == c4_pin)
-    {
-        scan(FIRST);
-        if (HAL_GPIO_ReadPin(c4_port, c4_pin))
-            button = 'A';
-        RestoreState();
-
-        scan(SECOND);
-        if (HAL_GPIO_ReadPin(c4_port, c4_pin))
-            button = 'B';
-        RestoreState();
-
-        scan(THIRD);
-        if (HAL_GPIO_ReadPin(c4_port, c4_pin))
-            button = 'C';
-        RestoreState();
-
-        scan(FOURTH);
-        if (HAL_GPIO_ReadPin(c4_port, c4_pin))
-            button = 'D';
-        RestoreState();
-    }
+    GetClick(pin, button);
 }
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
-    HAL_UART_Transmit(&huart2, (uint8_t *)TX_bufer, strlen(TX_bufer), 1000);
+	lcd_clear();
+	lcd_set_cursor(0, 0);
+	lcd_send_string("ALARM");
+	lcd_set_cursor(1, 0);
+	lcd_send_string("ALARM");
+	for(int i = 0; i < 7000000; i++){
+
+	}
 }
 
 int main(void)
@@ -211,6 +53,8 @@ int main(void)
     {
         if (button != ' ')
         {
+        	HAL_RTC_GetAlarm(&hrtc, &alarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+
             SetState(button, &alarm, &hrtc);
             button = ' ';
         }
@@ -296,7 +140,7 @@ static void MX_RTC_Init(void)
 
     sAlarm.AlarmTime.Hours = 0x0;
     sAlarm.AlarmTime.Minutes = 0x0;
-    sAlarm.AlarmTime.Seconds = 0x0;
+    sAlarm.AlarmTime.Seconds = 0x05;
     sAlarm.AlarmTime.SubSeconds = 0x0;
     sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
     sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
