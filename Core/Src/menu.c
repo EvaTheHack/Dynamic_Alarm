@@ -2,6 +2,7 @@
 #include "lcd1602.h"
 #include "rtc.h"
 #include <string.h>
+#include <stdint.h>
 
 uint8_t current_state = 0;
 uint8_t seconds = 0;
@@ -62,7 +63,7 @@ void SetState(uint8_t button, RTC_AlarmTypeDef *alarm, RTC_HandleTypeDef *hrtc)
 		{
 			alarm->AlarmTime.Hours = ten_hours * 10 + hours;
 			alarm->AlarmTime.Minutes = ten_minutes * 10 + minutes;
-			HAL_RTC_SetAlarm(hrtc, alarm, RTC_FORMAT_BIN);
+			HAL_RTC_SetAlarm_IT(hrtc, alarm, RTC_FORMAT_BIN);
 
 			current_state = 0;
 		}
